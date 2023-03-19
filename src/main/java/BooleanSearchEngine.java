@@ -3,74 +3,56 @@ import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class BooleanSearchEngine implements SearchEngine {
-    private final Map<String, List<PageEntry>> indexingMap = new HashMap<>();
+    protected Map<String, List<PageEntry>> pageEntryMap = new HashMap<>();
 
     public BooleanSearchEngine(File pdfsDir) throws IOException {
-        indexingPdfs(pdfsDir);
+
+        File[] fileList = pdfsDir.listFiles();
+        for (File pdf : fileList) {
+            var document = new PdfDocument(new PdfReader(pdf));
+
+            for (int i = 1; i <= document.getNumberOfPages(); i++) {
+                PdfPage page = document.getPage(i);
+                var text = PdfTextExtractor.getTextFromPage(page);
+                var words = text.split("\\P{IsAlphabetic}+");
+
+                Map<String, Integer> freqs = new HashMap<>();
+                for (var word : words) {
+                    if (word.isEmpty()) {
+                        continue;
+                    }
+                    word = word.toLowerCase();
+                    freqs.put(word, freqs.getOrDefault(word, 0) + 1);
+                }
+
+                for (var word : freqs.keySet()) {
+                    var pageEntry = new PageEntry(pdf.getName(), i, freqs.get(word));
+                    if (pageEntryMap.containsKey(word)) {
+                        List<PageEntry> pageEntryList = new ArrayList<>(pageEntryMap.get(word));
+                        pageEntryList.add(pageEntry);
+                        pageEntryMap.put(word, pageEntryList);
+                    } else {
+                        pageEntryMap.put(word, Arrays.asList(pageEntry));
+                    }
+                }
+            }
+        }
     }
 
     @Override
     public List<PageEntry> search(String word) {
-        String lowerCaseWord = word.toLowerCase();
-        if (indexingMap.containsKey(lowerCaseWord)) {
-            return indexingMap.get(lowerCaseWord).stream()
-                    .sorted(PageEntry::compareTo)
-                    .collect(Collectors.toList());
+        if (pageEntryMap.containsKey(word)) {
+            List<PageEntry> pageEntryList = pageEntryMap.get(word);
+            Collections.sort(pageEntryList);
+
+            return pageEntryList;
         } else {
             return Collections.emptyList();
-        }
-    }
-
-
-    private void indexingPdfs(File pdfsDir) throws IOException {
-        if (pdfsDir.isDirectory()) {
-            for (File file : pdfsDir.listFiles()) {
-                var doc = new PdfDocument(new PdfReader(file));
-                String namePdf = file.getName();
-                readingPagesPdfs(doc, namePdf);
-            }
-        } else {
-            System.out.println("directory not found");
-        }
-    }
-
-
-    private void readingPagesPdfs(PdfDocument doc, String namePdf) {
-        for (int pageNum = 1; pageNum <= doc.getNumberOfPages(); pageNum++) {
-            PdfPage page = doc.getPage(pageNum);
-            String text = PdfTextExtractor.getTextFromPage(page);
-            String[] words = text.split("\\P{IsAlphabetic}+");
-            frequencyWordCount(words, namePdf, pageNum);
-        }
-    }
-
-
-    private void frequencyWordCount(String[] words, String namePdf, int pageNum) {
-        Map<String, Integer> frequenceMap = new HashMap<>();
-        for (String word : words) {
-            word = word.toLowerCase();
-            frequenceMap.put(word, frequenceMap.getOrDefault(word, 0) + 1);
-            Integer frequenceCount = frequenceMap.get(word);
-            List<PageEntry> wordPageEntries = indexingMap.getOrDefault(word, new ArrayList<>());
-            indexingMap.put(word, wordPageEntries);
-
-            Iterator<PageEntry> iterator = wordPageEntries.iterator();
-            while (iterator.hasNext()) {
-                PageEntry nextPageEntry = iterator.next();
-                if (nextPageEntry.getPage() == pageNum && nextPageEntry.getPdfName().equals(namePdf)) {
-                    iterator.remove();
-                    break;
-                }
-            }
-            PageEntry pageEntry = new PageEntry(namePdf, pageNum, frequenceCount);
-            wordPageEntries.add(pageEntry);
         }
     }
 }
