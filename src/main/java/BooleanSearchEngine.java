@@ -32,6 +32,7 @@ public class BooleanSearchEngine implements SearchEngine {
 
                 for (var word : freqs.keySet()) {
                     var pageEntry = new PageEntry(pdf.getName(), i, freqs.get(word));
+
                     if (pageEntryMap.containsKey(word)) {
                         List<PageEntry> pageEntryList = new ArrayList<>(pageEntryMap.get(word));
                         pageEntryList.add(pageEntry);
@@ -39,6 +40,9 @@ public class BooleanSearchEngine implements SearchEngine {
                     } else {
                         pageEntryMap.put(word, Arrays.asList(pageEntry));
                     }
+
+                    List<PageEntry> pageEntryList = pageEntryMap.get(word);
+                    Collections.sort(pageEntryList);
                 }
             }
         }
@@ -48,8 +52,6 @@ public class BooleanSearchEngine implements SearchEngine {
     public List<PageEntry> search(String word) {
         if (pageEntryMap.containsKey(word)) {
             List<PageEntry> pageEntryList = pageEntryMap.get(word);
-            Collections.sort(pageEntryList);
-
             return pageEntryList;
         } else {
             return Collections.emptyList();
