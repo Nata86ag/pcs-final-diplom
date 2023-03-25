@@ -8,11 +8,12 @@ import java.io.IOException;
 import java.util.*;
 
 public class BooleanSearchEngine implements SearchEngine {
-    protected Map<String, List<PageEntry>> pageEntryMap = new HashMap<>();
+    private final Map<String, List<PageEntry>> pageEntryMap = new HashMap<>();
 
     public BooleanSearchEngine(File pdfsDir) throws IOException {
 
         File[] fileList = pdfsDir.listFiles();
+
         for (File pdf : fileList) {
             var document = new PdfDocument(new PdfReader(pdf));
 
@@ -22,6 +23,7 @@ public class BooleanSearchEngine implements SearchEngine {
                 var words = text.split("\\P{IsAlphabetic}+");
 
                 Map<String, Integer> freqs = new HashMap<>();
+
                 for (var word : words) {
                     if (word.isEmpty()) {
                         continue;
@@ -37,12 +39,10 @@ public class BooleanSearchEngine implements SearchEngine {
                         List<PageEntry> pageEntryList = new ArrayList<>(pageEntryMap.get(word));
                         pageEntryList.add(pageEntry);
                         pageEntryMap.put(word, pageEntryList);
+                        Collections.sort(pageEntryList);
                     } else {
                         pageEntryMap.put(word, Arrays.asList(pageEntry));
                     }
-
-                    List<PageEntry> pageEntryList = pageEntryMap.get(word);
-                    Collections.sort(pageEntryList);
                 }
             }
         }
@@ -51,10 +51,11 @@ public class BooleanSearchEngine implements SearchEngine {
     @Override
     public List<PageEntry> search(String word) {
         if (pageEntryMap.containsKey(word)) {
-            List<PageEntry> pageEntryList = pageEntryMap.get(word);
+            List<PageEntry> pageEntryList = pageEntryMap.get(word.toLowerCase());
             return pageEntryList;
         } else {
             return Collections.emptyList();
+
         }
     }
 }
