@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.util.List;
 
 import static java.lang.System.out;
+import static java.sql.DriverManager.println;
 
 public class Main {
     private static final int PORT = 8989;
@@ -13,7 +14,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         BooleanSearchEngine engine = new BooleanSearchEngine(new File("pdfs"));
-        out.println(engine.search("бизнес"));
+        System.out.println(engine.search("Бизнес"));
         try (ServerSocket serverSocket = new ServerSocket(8989)) {
             Gson gson = new Gson();
 
@@ -22,7 +23,8 @@ public class Main {
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
                     String word = in.readLine();
-                    List<PageEntry> searchResult = engine.search(word);
+                    word = word.toLowerCase();
+                    List<PageEntry> searchResult = engine.search(word.toLowerCase());
                     out.println(gson.toJson(searchResult));
                 }
             }
