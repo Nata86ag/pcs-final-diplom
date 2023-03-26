@@ -29,14 +29,14 @@ public class BooleanSearchEngine implements SearchEngine {
                         continue;
                     }
                     word = word.toLowerCase();
-                    freqs.put(word, freqs.getOrDefault(word, 0) + 1);
+                    freqs.put(word.toLowerCase(), freqs.getOrDefault(word, 0) + 1);
                 }
 
                 for (var word : freqs.keySet()) {
                     var pageEntry = new PageEntry(pdf.getName(), i, freqs.get(word));
 
                     if (pageEntryMap.containsKey(word)) {
-                        List<PageEntry> pageEntryList = new ArrayList<>(pageEntryMap.get(word));
+                        List<PageEntry> pageEntryList = new ArrayList<>(pageEntryMap.get(word.toLowerCase()));
                         pageEntryList.add(pageEntry);
                         pageEntryMap.put(word, pageEntryList);
                         Collections.sort(pageEntryList);
@@ -50,7 +50,7 @@ public class BooleanSearchEngine implements SearchEngine {
 
     @Override
     public List<PageEntry> search(String word) {
-        if (pageEntryMap.containsKey(word)) {
+        if (pageEntryMap.containsKey(word.toLowerCase())) {
             List<PageEntry> pageEntryList = pageEntryMap.get(word.toLowerCase());
             return pageEntryList;
         } else {
